@@ -18,12 +18,12 @@ public class BoardPanel extends JPanel{
     }
 
     public void paintComponent(Graphics g){
-        int side = Math.min(Math.min(this.jf.getHeight(),this.jf.getWidth()),800);
-        try {
-            Image img = ImageIO.read(new File("images/images.jpg"));
-            g.drawImage(img, 0, 0, side, side, this);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        int side = Math.min(Math.min(this.jf.getHeight(),this.jf.getWidth()),800);
+//        try {
+//            Image img = ImageIO.read(new File("images/images.jpg"));
+//            g.drawImage(img, 0, 0, side, side, this);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 }

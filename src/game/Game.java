@@ -1,5 +1,6 @@
 package game;
 
+import javax.swing.*;
 import java.util.Scanner;
 
 /**
@@ -22,19 +23,20 @@ public class Game {
     }
     public Game(Scanner sc){
         Board b = new Board();
+        JOptionPane.showMessageDialog(b.window_b, " Your name ");
         System.out.println("Board filled, game started !");
         this.sc=sc;
-        BoardWindow bw = new BoardWindow(this,b);
-        for(int i = 0; i<5;i++){//while(true){//b.isMate()!=true){
-            String s = sc.next();
-            System.out.println("message received "+s);
-            b.move(s);
-            bw.setVisible(false);
-            bw = new BoardWindow(this,b);
+        while (!b.isOver()) {
+            try {
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException e) {
+                System.out.println("Interrupted");
+            }
         }
-        //b.outcome();
+        b.terminate();
         System.out.println("Game is over, thanks for playing");
-        bw.setVisible(false);;
-        bw.dispose();
     }
+
+
 }
