@@ -4,6 +4,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -47,6 +48,23 @@ abstract class Piece {
     public static final Piece Black_Bishop = new Bishop(PlayerColor.BLACK);
     public static final Piece Black_Knight = new Knight(PlayerColor.BLACK);
     public static final Piece Black_Pawn = new Pawn(PlayerColor.BLACK);
+
+    public static Set<Piece> promotable(PlayerColor other_color){
+        if(other_color == PlayerColor.BLACK){
+            Set<Piece> pieces = new HashSet<Piece>();
+            pieces.add(Black_Queen);
+            pieces.add(Black_Rook);
+            pieces.add(Black_Bishop);
+            pieces.add(Black_Knight);
+            return pieces;
+        }
+        Set<Piece> pieces = new HashSet<Piece>();
+        pieces.add(White_Queen);
+        pieces.add(White_Rook);
+        pieces.add(White_Bishop);
+        pieces.add(White_Knight);
+        return pieces;
+    }
 
     public abstract boolean attacks(Cell from, Cell target, Set<Cell> occupied);
     public boolean moves(Cell from, Cell target, Board board){
@@ -165,14 +183,34 @@ class Pawn extends Piece{
     }
     @Override
     public boolean attacks(Cell from, Cell target, Set<Cell> occupied) {
-        int diff_row = (from.row - target.row);
+        int diff_row = (target.row - from.row);
         int diff_column = Math.abs(from.column - target.column);
         return (diff_column == 1)
-                && ((diff_row == 1 && color == PlayerColor.BLACK)
-                || (diff_row == -1 && color == PlayerColor.WHITE));
+                && (diff_row == color.direction);
     }
     @Override
     public boolean moves(Cell from, Cell target, Board board) {
-        return true;
+        // if not en passant et non promotion
+        int diff_row = (target.row - from.row);
+        int diff_column = Math.abs(from.column - target.column);
+        boolean valid = false;
+        if(diff_column == 1
+                && board.pieces.get(PlayerColor.next(color)).containsKey(target)
+                && diff_row == color.direction)
+            valid = true;
+        if(diff_column == 0){
+            if(diff_row == color.direction && !board.pieces.get(PlayerColor.next(color)).containsKey(target)){
+                valid = true;
+            }
+            if(diff_row == color.direction * 2 && from.row == color.starting_row
+                    && !board.pieces.get(PlayerColor.next(color)).containsKey(from.add_column(color.direction))
+                    && !board.pieces.get(PlayerColor.next(color)).containsKey(from.add_column(color.direction * 2))){
+                valid = true;
+            }
+        }
+        if(valid && target.row == color.promotion_row)
+            board.promotion = true;
+            //replace the piece in the board with the desired piece
+        return valid;
     }
 }

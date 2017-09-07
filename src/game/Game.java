@@ -23,7 +23,7 @@ public class Game {
     }
     public Game(Scanner sc){
         Board b = new Board();
-        JOptionPane.showMessageDialog(b.window_b, " Your name ");
+        //JOptionPane.showMessageDialog(b.window_b, " Your name ");
         System.out.println("Board filled, game started !");
         this.sc=sc;
         while (!b.isOver()) {
@@ -37,6 +37,4 @@ public class Game {
         b.terminate();
         System.out.println("Game is over, thanks for playing");
     }
-
-
 }

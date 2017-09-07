@@ -16,7 +16,7 @@ public class Board {
     public Dictionary<PlayerColor, Map<Cell, Piece>> pieces;
     private Dictionary<PlayerColor, Castle> castle; // true if castle is allowed
 
-    private Dictionary<PlayerColor, Cell> king;
+    public Dictionary<PlayerColor, Cell> king;
 
     private void init_board(){
         this.board=new HashMap<Cell, Piece>();
@@ -147,10 +147,27 @@ public class Board {
             System.out.println("Not Valid : illicit color : Player "+ color.color_name +" tried to move a piece of the color "+p.color+" --- Cells "+ from.name() + to.name());
             return;
         }
-        if(!this.check_valid(from, to)) { // prints error message
+        Move current = new Move(from, to, this);
+        if(!current.check_valid()) { // prints error message
             return;
         }
-        if(this.apply(from, to, true)){  //I don't use p, I can get it again
+        if (current.promotion){
+            // open a promotion window to choose the new Piece
+            Promotion promotion = new Promotion(color);
+
+            while (!promotion.isSelected()) {
+                try {
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException e) {
+                    System.out.println("Interrupted");
+                }
+            }
+            Piece promoted = promotion.piece;
+            this.promotion = false;
+            this.board.put(from, promoted);
+        }
+        if(current.apply()){  //I don't use p, I can get it again
             this.check_terminated();
             trait = PlayerColor.next(trait);
             System.out.println("Trait aux "+ trait.color_name);
@@ -171,25 +188,6 @@ public class Board {
         return color_list[index];
     }
 
-    private boolean apply(Cell from, Cell to, boolean print){
-        Piece p = this.board.get(from);
-        if (!p.moves(from, to, this)){
-            System.out.println("Move failed "+p+" moving from "+from+" to "+to);
-            return false;
-        }
-        if(p instanceof King)
-            this.king.put(trait,to);
-        this.board.put(to, p);
-        this.board.remove(from);
-        this.pieces.get(PlayerColor.next(trait)).remove(to);
-        this.pieces.get(trait).remove(from);
-        this.pieces.get(trait).put(to,p);
-        if(print)
-            System.out.println("Played :"+ from.name() + to.name());
-        return true;
-    } // do specifics for castle and promotion
-    // check for "en passant" or castle
-
     private void check_terminated(){
         if(this.board.get(Cell.F4) == Piece.Black_Bishop){
             over = true;
@@ -203,7 +201,7 @@ public class Board {
     and checking that the cell of the own king is not there,
     this list is built after each potential move, so don't need to store it
      */
-    private boolean king_attacked(){
+    public boolean king_attacked(){
         Set<Cell> occupied = new HashSet<Cell>(this.board.keySet());
         Cell king_cell = this.king.get(trait);
         for(Map.Entry<Cell, Piece> pair :
@@ -218,13 +216,7 @@ public class Board {
         return false;
     }
 
-    private boolean check_valid(Cell from, Cell to) {
-        Board temp = new Board(this);
-        // don't forget to check about castle validity
-        return temp.apply(from, to, false) && !temp.king_attacked();
-    }
-
-    private Board(Board b){
+    public Board(Board b){
         this.copy_board(b.board);
         this.copy_pieces(b.pieces);
         this.trait = b.trait;
@@ -249,122 +241,5 @@ public class Board {
         this.castle.put(this.trait, new Castle(castle));
     }
 
-
-
-
-    /*
-    private boolean checkmate;
-    public boolean isMate(){
-        return checkmate;
-    }
-    private String outcome;
-    public void outcome(){
-        if(this.outcome=="w"){
-            System.out.println("White won ! Congratulations !");
-        }
-        if(this.outcome=="b"){
-            System.out.println("Black won ! Congratulations !");
-        }
-        if(this.outcome=="d"){
-            System.out.println("It's a draw ! Congratulations !");
-        }
-    }
-
-    public void move(String s){
-        if(s=="wsurrender"){
-            System.out.println("White surrendered");
-            outcome="b";return;
-        }
-        if(s=="bsurrender"){
-            System.out.println("Black surrendered");
-            outcome="w";return;
-        }
-        if(s.length()==4||s.length()==5){
-            String move = s.toLowerCase();
-            if(this.isamove(move)){
-                System.out.println("Moved "+s);return;
-            }
-        }
-        System.out.println("Problem occured, can't do the move !");
-    }
-
-    String toplay;//w or b
-
-    public boolean isamove(String move){
-        char[] c = move.toCharArray();
-        int m1 = (int) c[0] -97;
-        int m2 = (int) c[1];
-        int m3 = (int) c[2] -97;
-        int m4 = (int) c[3];
-        String promotion = "";
-        if(move.length()==5){
-            promotion = Character.toString(c[4]);
-        }
-        if(m1<8&&m1>=0&&m2<8&&m2>=0&&m3<8&&m3>=0&&m4<8&&m4>=0&&(promotion==""||promotion=="q"||promotion=="r"||promotion=="k"||promotion=="b")){
-            if(board[m2][m1] instanceof Piece){
-                Piece p = board[m2][m1];
-                if(p.color==toplay){
-                    //check if the move is allowed
-                    boolean licitmove=false;
-                    boolean ispromotion=false;
-                    boolean iscastle=false;
-                    boolean ispawncapture=false;
-                    boolean isenpassant=false;
-                    if(m1==m3||m2==m4){
-                        licitmove=false;
-                    }
-                    else if(p.piece=="rook"){//check si y a rien sur le chemin
-                        if(m1==m3||m2==m4){
-                            licitmove=true;
-                        }
-                    }
-                    else if(p.piece=="bishop"){
-                        if((m1-m3)==(m2-m4)||(m1-m3)==(m4-m2)){
-                            licitmove=true;
-                        }
-                    }
-                    else if(p.piece=="knight"){
-                        int diff1=Math.abs(m1-m3),diff2=Math.abs(m2-m4);
-                        if((diff1==1&&diff2==2)||(diff1==2&&diff2==1)){
-                            licitmove=true;
-                        }
-                    }
-                    else if(p.piece=="queen"){
-                        if(m1==m3||m2==m4){
-                            licitmove=true;
-                        }
-                        if((m1-m3)==(m2-m4)||(m1-m3)==(m4-m2)){
-                            licitmove=true;
-                        }
-                    }
-                    else if(p.piece=="king"){
-                        if(Math.abs(m1-m3)<=1||Math.abs(m2-m4)<=1){
-                            licitmove=true;
-                        }
-                        if(m1==m3&&Math.abs(m2-m4)==2){
-                            if(toplay=="w"&&m1==0||toplay=="w"&&m1==7){
-
-                            }
-                        }
-                    }
-
-                    //care of "castle", "en passant", "promotion" or pawn capture
-                    //update the position in a new board
-                    //update the counts, check for potential checks
-                    //replace the board by the new board
-                    //check for checkmate, stalemate, fifty-move, three-repetition, or other specifics
-                    //update the "toplay"
-                }
-            }
-        }
-        return false;
-    }
-    String lastmove;//for the en passant rule
-    Board lastboard;//for the repetition rule
-    boolean repeated;//for the repetation rule
-    boolean whitecastleksallowed;//updated when king or rook moves, or after castle, during board replacement (only checks movement, not the king check or the case check)
-    boolean whitecastleqsallowed;
-    boolean blackcastleksallowed;
-    boolean blackcastleqsallowed;
-    */
+    public boolean promotion;
 }

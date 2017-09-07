@@ -9,29 +9,19 @@ import java.awt.event.MouseListener;
  * Created by Martial on 06/12/2015.
  */
 
-public class Square extends JButton implements MouseListener {
+abstract public class Square extends JButton implements MouseListener {
     Piece piece;
-    BoardWindow board;
-    Cell cell;
     String name;
     Image img;
     Color back_color;
 
-    public Square(Cell cell, BoardWindow board, Color back_color){
-        super(cell.name());
-        this.cell = cell;
-        this.piece = board.board.getPiece(cell);
+    public Square(String name, Piece piece, Color back_color){
+        super(name);
+        this.piece = piece;
         if(this.piece != null) this.img = this.piece.img;
-        this.setBackground(cell.color());
         this.addMouseListener(this);
-        this.name = cell.name();
-        this.board = board;
+        this.name = name;
         this.back_color = back_color;
-    }
-
-    public static Square square_from_index(int i, int j, BoardWindow board, Color back_color){
-        Cell c = Cell.get_cell(i,j);
-        return new Square(c, board, back_color);
     }
 
     public void paintComponent(Graphics g){
@@ -47,8 +37,25 @@ public class Square extends JButton implements MouseListener {
         g2d.drawString(this.name, (this.getWidth() / 2 - 5), (this.getHeight() / 2) + 5);
     }
 
-    int x;
-    int y;
+    int x = 0;
+    int y = 0;
+}
+
+class BoardSquare extends Square{
+    BoardWindow board;
+    Cell cell;
+
+    public BoardSquare(Cell cell, BoardWindow board, Color back_color){
+        super(cell.name(), board.board.getPiece(cell), back_color);
+        this.cell = cell;
+        this.setBackground(cell.color());
+        this.board = board;
+    }
+
+    public static BoardSquare square_from_index(int i, int j, BoardWindow board, Color back_color){
+        Cell c = Cell.get_cell(i,j);
+        return new BoardSquare(c, board, back_color);
+    }
 
     public void mouseClicked(MouseEvent event) {
         x = event.getX() - this.getWidth() / 2;
@@ -77,5 +84,33 @@ public class Square extends JButton implements MouseListener {
 
     public void mouseReleased(MouseEvent event) {
         board.released(cell);
+    }
+}
+
+
+class PromotionSquare extends Square{
+    Promotion promotion;
+
+    public PromotionSquare(Piece piece, Color back_color, Promotion promotion){
+        super(piece.name, piece, back_color);
+        this.promotion = promotion;
+        this.setBackground(back_color);
+    }
+
+
+    public void mouseClicked(MouseEvent event) {
+        this.promotion.chosen(piece);
+    }
+
+    public void mouseEntered(MouseEvent event) {
+    }
+
+    public void mouseExited(MouseEvent event) {
+    }
+
+    public void mousePressed(MouseEvent event) {
+    }
+
+    public void mouseReleased(MouseEvent event) {
     }
 }

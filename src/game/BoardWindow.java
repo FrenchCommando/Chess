@@ -39,7 +39,7 @@ abstract class BoardWindow  extends JFrame {
         sp.setSize(side - 60, side - 60);
         sp.setBounds(30, 30, side - 60, side - 60);
         sp.setMinimumSize(new Dimension(300,300));
-        sp.setMaximumSize(new Dimension(800,800));
+        //sp.setMaximumSize(new Dimension(800,800)); // doesn't work anyways
         sp.setPreferredSize(new Dimension(side - 60, side - 60));
         sp.revalidate();
         //builds the squares
@@ -102,7 +102,7 @@ class BoardWindowBlack extends BoardWindow{
     protected void fill_squares(BoardPanel sp) {
         for(int i = 0;i<8;i++){
             for(int j = 0;j<8;j++){
-                Square sq = Square.square_from_index( 7 - j , i , this , this.background_color);
+                Square sq = BoardSquare.square_from_index( 7 - j , i , this , this.background_color);
                 sp.add(sq);
             }
         }
@@ -122,7 +122,7 @@ class BoardWindowWhite extends BoardWindow{
     protected void fill_squares(BoardPanel sp) {
         for(int i = 0 ; i < 8 ; i++ ){
             for(int j = 0 ; j < 8 ; j++ ){
-                Square sq = Square.square_from_index( j , 7 - i , this ,  this.background_color);
+                Square sq = BoardSquare.square_from_index( j , 7 - i , this ,  this.background_color);
                 sp.add(sq);
             }
         }
