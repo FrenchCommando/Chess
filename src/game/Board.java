@@ -157,6 +157,7 @@ public class Board {
 
             while (!promotion.isSelected()) {
                 try {
+                    promotion.repaint();
                     Thread.sleep(1000);
                 }
                 catch (InterruptedException e) {
