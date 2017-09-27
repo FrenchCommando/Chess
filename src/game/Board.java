@@ -14,9 +14,11 @@ public class Board {
     public Map<Cell, Piece> board;
 
     public Dictionary<PlayerColor, Map<Cell, Piece>> pieces;
-    private Dictionary<PlayerColor, Castle> castle; // true if castle is allowed
+    public Dictionary<PlayerColor, Castle> castle; // true if castle is allowed
 
     public Dictionary<PlayerColor, Cell> king;
+
+    public Move current_move;
 
     private void init_board(){
         this.board=new HashMap<Cell, Piece>();
@@ -122,7 +124,7 @@ public class Board {
         this.init_king();
         this.init_castle();
         this.build_windows();
-    }
+    } // I need another constructor with a given position
     public void terminate(){
         window_b.terminate();
         window_w.terminate();
@@ -147,31 +149,21 @@ public class Board {
             System.out.println("Not Valid : illicit color : Player "+ color.color_name +" tried to move a piece of the color "+p.color+" --- Cells "+ from.name() + to.name());
             return;
         }
-        Move current = new Move(from, to, this);
+        Move current =  Move.move_factory(from, to, this);
         if(!current.check_valid()) { // prints error message
             return;
         }
-        if (current.promotion){
-            // open a promotion window to choose the new Piece
-            Promotion promotion = new Promotion(color);
 
-            while (!promotion.isSelected()) {
-                try {
-                    promotion.repaint();
-                    Thread.sleep(1000);
-                }
-                catch (InterruptedException e) {
-                    System.out.println("Interrupted");
-                }
-            }
-            Piece promoted = promotion.piece;
-            this.promotion = false;
-            this.board.put(from, promoted);
-        }
         if(current.apply()){  //I don't use p, I can get it again
-            this.check_terminated();
-            trait = PlayerColor.next(trait);
-            System.out.println("Trait aux "+ trait.color_name);
+            if(this.check_terminated()){
+                over = true;
+                System.out.println("Game Over");
+            }
+            else{
+                trait = PlayerColor.next(trait);
+                System.out.println("Trait aux "+ trait.color_name);
+
+            }
             window_b.background_color = random_color(0);
             window_w.background_color = random_color(3);
             window_w.repaint();
@@ -189,10 +181,18 @@ public class Board {
         return color_list[index];
     }
 
-    private void check_terminated(){
-        if(this.board.get(Cell.F4) == Piece.Black_Bishop){
-            over = true;
+    private boolean check_terminated(){
+        boolean terminated = false;
+        if(king_attacked()){
+            terminated = true;
+            // check if any accessible cells is an escape cell
+            Cell king_cell = king.get(trait);
+            for( Cell[] cell_array : Cell.Cells)
+                for( Cell target : cell_array)
+                    if(Move.move_factory(king_cell, target, this).check_valid())
+                        terminated = false;
         }
+        return terminated;
     }// check whether there is checkmate or draw
     // increments counters for termination - and special final situations
 
@@ -242,5 +242,4 @@ public class Board {
         this.castle.put(this.trait, new Castle(castle));
     }
 
-    public boolean promotion;
 }

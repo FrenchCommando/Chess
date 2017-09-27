@@ -209,7 +209,7 @@ class Pawn extends Piece{
             }
         }
         if(valid && target.row == color.promotion_row)
-            board.promotion = true;
+            board.current_move.promotion = true;
             //replace the piece in the board with the desired piece
         return valid;
     }
