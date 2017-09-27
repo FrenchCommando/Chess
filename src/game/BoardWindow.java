@@ -12,10 +12,17 @@ abstract class BoardWindow  extends JFrame {
     PlayerColor color;
     Color background_color = Color.BLACK;
 
+    int width, height;
 
     public BoardWindow(Board board, PlayerColor color) {
         this.setTitle("My game board -- " + color.color_name);
-        this.setSize(600, 600);
+        
+        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        width = gd.getDisplayMode().getWidth();
+        height = gd.getDisplayMode().getHeight();
+        int size = Math.min(width,height) / 5 ;
+        
+        this.setSize(size, size);
         this.setLocationRelativeTo(null);
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.setMinimumSize(new Dimension(300, 300));
@@ -93,7 +100,7 @@ abstract class BoardWindow  extends JFrame {
 class BoardWindowBlack extends BoardWindow{
     public BoardWindowBlack(Board board) {
         super(board, PlayerColor.BLACK);
-        this.setLocation(1000, 100);
+        this.setLocation(width * 11 / 20, height / 4);
         this.background_color = Color.BLACK;
         super.repaint();
     }
@@ -113,7 +120,7 @@ class BoardWindowBlack extends BoardWindow{
 class BoardWindowWhite extends BoardWindow{
     public BoardWindowWhite(Board board) {
         super(board, PlayerColor.WHITE);
-        this.setLocation(200, 100);
+        this.setLocation(width / 20, height / 4);
         this.background_color = Color.WHITE;
         super.repaint();
     }

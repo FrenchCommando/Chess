@@ -16,17 +16,23 @@ public class Promotion extends JFrame {
 
     public Promotion(PlayerColor color) {
         this.setTitle("Promotion - " + color.color_name + " -- Please select Promoted Piece");
-        this.setSize(300, 800);
+
+        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        int width = gd.getDisplayMode().getWidth();
+        int height = gd.getDisplayMode().getHeight();
+        int size = Math.min(width,height) / 5 ;
+        
+        this.setSize(size, size * 4);
         this.setLocationRelativeTo(null);
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        this.setMinimumSize(new Dimension(300, 300));
+        this.setMinimumSize(new Dimension(50, 50));
         this.setVisible(true);
         this.setResizable(true);
         this.setAlwaysOnTop(false);
 
         this.color = color;
 
-        this.setLocation(750, 200);
+        this.setLocation( width * 2 / 5, height / 10);
 
         this.repaint();
     }
