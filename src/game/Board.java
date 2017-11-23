@@ -8,6 +8,8 @@ import java.util.*;
  * contains a chess board, and a memory of all the pieces available
  */
 public class Board {
+    final Object lock;
+
     public BoardWindow window_w;
     public BoardWindow window_b;
 
@@ -114,11 +116,10 @@ public class Board {
     public PlayerColor trait = PlayerColor.WHITE;
 
     boolean over = false;
-    public boolean isOver(){
-        return over;
-    }
+    public boolean isOver(){return over;}
 
-    public Board(){
+    public Board(Object lock){
+        this.lock = lock;
         this.init_board();
         this.init_pieces();
         this.init_king();
@@ -155,12 +156,16 @@ public class Board {
         }
 
         if(current.apply()){  //I don't use p, I can get it again
+            trait = PlayerColor.next(trait);
             if(this.check_terminated()){
                 over = true;
+                System.out.println("Game Over - prenotify");
+                synchronized (lock){
+                    lock.notifyAll();
+                }
                 System.out.println("Game Over");
             }
             else{
-                trait = PlayerColor.next(trait);
                 System.out.println("Trait aux "+ trait.color_name);
 
             }
@@ -183,14 +188,16 @@ public class Board {
 
     private boolean check_terminated(){
         boolean terminated = false;
-        if(king_attacked()){
+        if(king_attacked(trait)){
             terminated = true;
             // check if any accessible cells is an escape cell
             Cell king_cell = king.get(trait);
             for( Cell[] cell_array : Cell.Cells)
                 for( Cell target : cell_array)
-                    if(Move.move_factory(king_cell, target, this).check_valid())
-                        terminated = false;
+                    if(Move.move_factory(king_cell, target, this).check_valid()){
+                        System.out.println("Not terminated -- " + trait + " King in " + king_cell + " cen move to cell " + target);
+                        return false;
+                    }
         }
         return terminated;
     }// check whether there is checkmate or draw
@@ -202,11 +209,11 @@ public class Board {
     and checking that the cell of the own king is not there,
     this list is built after each potential move, so don't need to store it
      */
-    public boolean king_attacked(){
+    public boolean king_attacked(PlayerColor trait){
         Set<Cell> occupied = new HashSet<Cell>(this.board.keySet());
         Cell king_cell = this.king.get(trait);
         for(Map.Entry<Cell, Piece> pair :
-                this.pieces.get(PlayerColor.next(this.trait)).entrySet()){
+                this.pieces.get(PlayerColor.next(trait)).entrySet()){
             Cell c = pair.getKey();
             Piece p = pair.getValue();
             if (p.attacks(c,king_cell,occupied)) {
@@ -218,6 +225,7 @@ public class Board {
     }
 
     public Board(Board b){
+        this.lock = b.lock;
         this.copy_board(b.board);
         this.copy_pieces(b.pieces);
         this.trait = b.trait;

@@ -1,9 +1,14 @@
 package game;
 
+import javax.swing.*;
+import java.awt.*;
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * Created by Martial on 06/09/2017.
  */
 public abstract class Move {
+
     Cell from;
     Cell to;
     Board board;
@@ -36,8 +41,22 @@ public abstract class Move {
 
 class MoveRegular extends Move{
 
+    final Object lock = new Object();
+    final Object lock_promotion = new Object();
+
     public MoveRegular(Cell from, Cell to, Board board) {
         super(from, to, board);
+    }
+
+    public void apply_common(){
+        Piece p = this.board.board.get(from);
+        if(p instanceof King)
+            this.board.king.put(this.board.trait,to);
+        this.board.board.put(to, p);
+        this.board.board.remove(from);
+        this.board.pieces.get(PlayerColor.next(this.board.trait)).remove(to);
+        this.board.pieces.get(this.board.trait).remove(from);
+        this.board.pieces.get(this.board.trait).put(to,p);
     }
 
     public boolean temp_apply(){
@@ -47,18 +66,48 @@ class MoveRegular extends Move{
             System.out.println("Move failed "+p+" moving from "+from+" to "+to);
             return false;
         }
-        return apply();
+        apply_common();
+        return true; //apply();
     }
 
     public boolean apply(){
-        Piece p = this.board.board.get(from);
-        if(p instanceof King)
-            this.board.king.put(this.board.trait,to);
-        this.board.board.put(to, p);
-        this.board.board.remove(from);
-        this.board.pieces.get(PlayerColor.next(this.board.trait)).remove(to);
-        this.board.pieces.get(this.board.trait).remove(from);
-        this.board.pieces.get(this.board.trait).put(to,p);
+        apply_common();
+
+        if(this.promotion){
+            //open a promotion window to choose the new Piece
+            final AtomicReference<Piece> p = new AtomicReference<Piece>();
+            Promotion promotion = new Promotion(board.trait, lock_promotion, p);
+            promotion.run();
+
+//            EventQueue.invokeLater(new Runnable() {
+//                public void run() {
+//                    Promotion promotion = new Promotion(board.trait, lock_promotion, p);
+//                    promotion.run();
+//                }
+//            });
+
+//            synchronized (lock_promotion){
+//                try {
+//                    System.out.println("MovePreWaiting");
+//                    lock_promotion.wait();
+//                    System.out.println("MoveWaiting");
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+
+            System.out.println("MovePostWait");
+            Piece promoted = p.get();
+            this.board.board.remove(to);
+            board.board.put(to, promoted);
+            this.board.pieces.get(this.board.trait).remove(to);
+            this.board.pieces.get(this.board.trait).put(to,promoted);
+            synchronized (lock_promotion){
+                lock_promotion.notifyAll();
+            }
+            System.out.println("MovePostNotified");
+        }
+
 
         return true;
     }
@@ -66,22 +115,9 @@ class MoveRegular extends Move{
     public boolean check_valid(){
         Board temp = new Board(board);
         MoveRegular temp_move = new MoveRegular(from, to, temp);
-        boolean valid = temp_move.temp_apply() && !temp.king_attacked();
+        boolean valid = temp_move.temp_apply() && !temp.king_attacked(temp.trait);
         if (valid && temp_move.promotion){
-            // open a promotion window to choose the new Piece
-            Promotion promotion = new Promotion(board.trait);
-
-            while (!promotion.isSelected()) {
-                try {
-                    promotion.repaint();
-                    Thread.sleep(1000);
-                }
-                catch (InterruptedException e) {
-                    System.out.println("Interrupted");
-                }
-            }
-            Piece promoted = promotion.piece;
-            board.board.put(from, promoted);
+            this.promotion = true;
         }
         return valid;
     }
@@ -107,7 +143,7 @@ class MoveEnPassant extends MoveRegular{
 
     @Override
     public boolean check_valid(){
-        return isEnPassant && check_valid();
+        return isEnPassant && super.check_valid();
     }
 
     @Override

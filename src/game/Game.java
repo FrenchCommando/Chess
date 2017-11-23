@@ -1,37 +1,45 @@
 package game;
 
-import javax.swing.*;
 import java.util.Scanner;
 
 /**
  * Created by Martial on 30/07/2015.
  */
-public class Game {
-    Scanner sc;
+public class Game implements Runnable{
+
+    final static Object lock = new Object();
+
     public static void main(String[] args){
         Scanner sc = new Scanner(System.in);
-        new Game(sc);
+        javax.swing.SwingUtilities.invokeLater(new Game(lock));
         System.out.println("Do you want to play again?");
         String s = sc.next();
         System.out.println("message received "+s);
         while(s.toLowerCase().startsWith("y")){
-            new Game(sc);
+            javax.swing.SwingUtilities.invokeLater(new Game(lock));
             System.out.println("Do you want to play again?");
             s = sc.next();
             System.out.println("message received "+s);
         }
     }
-    public Game(Scanner sc){
-        Board b = new Board();
+    public void run(){
+        synchronized (lock){
+            try {
+                lock.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    public Game(Object lock){
+        Board b = new Board(lock);
         //JOptionPane.showMessageDialog(b.window_b, " Your name ");
         System.out.println("Board filled, game started !");
-        this.sc=sc;
-        while (!b.isOver()) {
+        synchronized (Game.lock){
             try {
-                Thread.sleep(1000);
-            }
-            catch (InterruptedException e) {
-                System.out.println("Interrupted");
+                lock.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
         b.terminate();

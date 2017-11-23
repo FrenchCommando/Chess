@@ -26,7 +26,7 @@ abstract class BoardWindow  extends JFrame {
         this.setLocationRelativeTo(null);
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         this.setMinimumSize(new Dimension(300, 300));
-        this.setVisible(true);
+        //this.setVisible(true);
         this.setResizable(true);
         this.setAlwaysOnTop(false);
 
@@ -40,8 +40,8 @@ abstract class BoardWindow  extends JFrame {
         //displays the board
         int side = Math.min(Math.min(this.getHeight(),this.getWidth()),800);
 
-        BoardPanel sp;
-        sp = new BoardPanel(this);
+        BoardPanel sp = new BoardPanel();
+        //this.add(sp,BorderLayout.CENTER);
         sp.setLayout(new GridLayout(8, 8));
         sp.setSize(side - 60, side - 60);
         sp.setBounds(30, 30, side - 60, side - 60);
@@ -53,6 +53,7 @@ abstract class BoardWindow  extends JFrame {
 
         fill_squares(sp);
 
+        sp.revalidate();
         sp.repaint();
         this.setContentPane(sp);
         this.setVisible(true);
