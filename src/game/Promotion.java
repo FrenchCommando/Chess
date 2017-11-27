@@ -2,116 +2,58 @@ package game;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Created by Martial on 06/09/2017.
  */
-public class Promotion extends JFrame implements Runnable{
-
+public class Promotion extends JFrame {
 
     PlayerColor color;
     Color background_color = Color.BLACK;
 
-    boolean selected = false;
-    AtomicReference<Piece> piece;
-    final Object obj_;
+    final AtomicReference<Piece> piece;
 
-    public Promotion(PlayerColor color, Object obj, AtomicReference<Piece> p) {
-        obj_ = obj;
+    PromotionWindow window;
+
+    public Promotion(PlayerColor color, AtomicReference<Piece> p) {
+
         piece = p;
         this.color = color;
 
-    }
 
-    @Override
-    public void repaint(){
-        //displays the board
-        int side = Math.min(Math.min(this.getHeight(),this.getWidth()),800);
+        Callable<PromotionWindow> promotionWindowCallable = () -> new PromotionWindow(this);
 
-        BoardPanel sp = new BoardPanel();
-        //this.add(sp);
-        sp.setLayout(new GridLayout(4, 2));
-        sp.setSize(side - 60, side - 60);
-        sp.setBounds(30, 30, side - 60, side - 60);
-        sp.setMinimumSize(new Dimension(300,300));
-        //sp.setMaximumSize(new Dimension(800,800)); // doesn't work anyways
-        sp.setPreferredSize(new Dimension(side - 60, side - 60));
-        sp.revalidate();
-        //builds the squares
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+        Future<PromotionWindow> promotionWindowFuture = executorService.submit(promotionWindowCallable);
 
-        fill_squares(sp);
-        System.out.println("Promotion Square filled");
+        //EventQueue.invokeLater(() -> new PromotionWindow(this));
 
-        sp.repaint();
-        this.setContentPane(sp);
-        this.setVisible(true);
-        System.out.println("Promotion All Painted");
-    }
 
-    protected void fill_squares(BoardPanel sp){
-        for(Piece p : Piece.promotable(this.color)){
-            Square sq = new PromotionSquare(p,this.background_color,this);
-            sp.add(sq);
+        try {
+            window = promotionWindowFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
         }
-    }
 
-    public void terminate(){
-        this.setVisible(false);
-        this.dispose();
-    }
 
-    public void chosen(Piece p){
-        selected = true;
-        piece.set(p);
-        notify_done();
-    }
-
-    public synchronized void notify_done() {
-
-        synchronized (obj_){
-            obj_.notifyAll();
-        }
-        System.out.println("PromotionPreNotified");
-        synchronized (obj_){
-            try {
-                obj_.wait();
-                System.out.println("PromotionWaiting");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        try {
+            System.out.println("Promotion :: waiting for p");
+            Piece piece = p.get();
+            while(piece == null){
+                TimeUnit.SECONDS.sleep(1);
+                System.out.println("Promotion :: waiting for p - loop");
+                piece = p.get();
             }
+            System.out.println("Promotion  :: post :: waiting for p");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        System.out.println("PromotionNotified");
-        terminate();
+        window.terminate();
+        System.out.println("Promotion code out");
+
+        executorService.shutdown();
     }
 
-    @Override
-    public void run() {
-        this.setTitle("Promotion - " + color.color_name + " -- Please select Promoted Piece");
-
-        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-        int width = gd.getDisplayMode().getWidth();
-        int height = gd.getDisplayMode().getHeight();
-        int size = Math.min(width,height) / 5 ;
-
-        this.setSize(size, size * 4);
-        this.setLocationRelativeTo(null);
-        this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        this.setMinimumSize(new Dimension(50, 50));
-        //this.setVisible(true);
-        this.setResizable(true);
-        this.setAlwaysOnTop(false);
-
-
-        this.setLocation( width * 2 / 5, height / 10);
-
-        this.repaint();
-        synchronized (obj_){
-            try {
-                obj_.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 }

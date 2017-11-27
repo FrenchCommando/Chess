@@ -2,13 +2,14 @@ package game;
 
 import java.awt.*;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
 
 /**
  * Created by Martial on 30/07/2015.
  * contains a chess board, and a memory of all the pieces available
  */
 public class Board {
-    final Object lock;
+    Lock lock;
 
     public BoardWindow window_w;
     public BoardWindow window_b;
@@ -115,10 +116,7 @@ public class Board {
 
     public PlayerColor trait = PlayerColor.WHITE;
 
-    boolean over = false;
-    public boolean isOver(){return over;}
-
-    public Board(Object lock){
+    public Board(Lock lock){
         this.lock = lock;
         this.init_board();
         this.init_pieces();
@@ -158,7 +156,6 @@ public class Board {
         if(current.apply()){  //I don't use p, I can get it again
             trait = PlayerColor.next(trait);
             if(this.check_terminated()){
-                over = true;
                 System.out.println("Game Over - prenotify");
                 synchronized (lock){
                     lock.notifyAll();

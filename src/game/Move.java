@@ -2,7 +2,10 @@ package game;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by Martial on 06/09/2017.
@@ -41,9 +44,6 @@ public abstract class Move {
 
 class MoveRegular extends Move{
 
-    final Object lock = new Object();
-    final Object lock_promotion = new Object();
-
     public MoveRegular(Cell from, Cell to, Board board) {
         super(from, to, board);
     }
@@ -75,36 +75,42 @@ class MoveRegular extends Move{
 
         if(this.promotion){
             //open a promotion window to choose the new Piece
+
             final AtomicReference<Piece> p = new AtomicReference<Piece>();
-            Promotion promotion = new Promotion(board.trait, lock_promotion, p);
-            promotion.run();
+            Runnable pieceRunnable = () ->{
+                new Promotion(board.trait, p);
+                System.out.println("End Promotion Runnable");
+            };
 
-//            EventQueue.invokeLater(new Runnable() {
-//                public void run() {
-//                    Promotion promotion = new Promotion(board.trait, lock_promotion, p);
-//                    promotion.run();
-//                }
-//            });
+            ExecutorService executor = Executors.newFixedThreadPool(4);
+            executor.submit(pieceRunnable);
 
-//            synchronized (lock_promotion){
-//                try {
-//                    System.out.println("MovePreWaiting");
-//                    lock_promotion.wait();
-//                    System.out.println("MoveWaiting");
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
+            try {
+                TimeUnit.SECONDS.sleep(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
-            System.out.println("MovePostWait");
+            try {
+                synchronized (p){
+                    p.wait();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println("Lock back to the Move thread");
+
+            executor.shutdown();
+
             Piece promoted = p.get();
+
+            System.out.println("Move :: Promoted is " + promoted);
+
             this.board.board.remove(to);
             board.board.put(to, promoted);
             this.board.pieces.get(this.board.trait).remove(to);
             this.board.pieces.get(this.board.trait).put(to,promoted);
-            synchronized (lock_promotion){
-                lock_promotion.notifyAll();
-            }
             System.out.println("MovePostNotified");
         }
 

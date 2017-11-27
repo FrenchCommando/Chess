@@ -4,11 +4,14 @@ import game.Board;
 import game.Cell;
 import game.PlayerColor;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * Created by Martial on 07/09/2017.
  */
 public class TestCheckMate {
-    final static Object lock = new Object();
+    final static Lock lock = new ReentrantLock();
     public static void main(String[] args){
         Board b = new Board(lock);
         b.move(Cell.E2,Cell.E4, PlayerColor.WHITE);

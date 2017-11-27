@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
 
 /**
  * Created by Martial on 06/12/2015.
@@ -24,7 +26,10 @@ abstract public class Square extends JButton implements MouseListener {
         this.back_color = back_color;
     }
 
+    @Override
     public void paintComponent(Graphics g){
+        System.out.println("Square printed");
+
         Graphics2D g2d = (Graphics2D)g;
         Color back_color = this.back_color;
         GradientPaint gp = new GradientPaint(0, 0, this.getBackground(), 0, 80, back_color, true);
@@ -89,17 +94,24 @@ class BoardSquare extends Square{
 
 
 class PromotionSquare extends Square{
-    Promotion promotion;
 
-    public PromotionSquare(Piece piece, Color back_color, Promotion promotion){
+    AtomicReference<Piece> atomicReference;
+
+    public PromotionSquare(Piece piece, Color back_color, AtomicReference<Piece> atomicReference){
         super(piece.name, piece, back_color);
-        this.promotion = promotion;
+        this.atomicReference = atomicReference;
         this.setBackground(back_color);
+
+        System.out.println("PromotionSquare built " + piece);
     }
 
 
     public void mouseClicked(MouseEvent event) {
-        this.promotion.chosen(piece);
+        synchronized (atomicReference){
+            atomicReference.set(piece);
+            atomicReference.notifyAll();
+            System.out.println("Piece selected" + piece);
+        }
     }
 
     public void mouseEntered(MouseEvent event) {

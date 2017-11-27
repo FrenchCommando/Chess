@@ -16,6 +16,7 @@ public class BoardPanel extends JPanel{
     }
 
     public void paintComponent(Graphics g){
+        super.paintComponent(g);
         int side = Math.min(Math.min(100,111),800);
         try {
             Image img = ImageIO.read(new File("images/images.jpg"));
